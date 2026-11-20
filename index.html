@@ -1664,10 +1664,38 @@ function bcHost(code,h){const bc=new BroadcastChannel('vg-'+code);const map={};N
 function bcJoin(code,h){const bc=new BroadcastChannel('vg-'+code);const id='g'+Math.random().toString(36).slice(2,8);const ls={d:null,c:null};NET.peer={destroy:()=>{bc.postMessage({from:id,type:'bye'});bc.close()}};
   bc.onmessage=e=>{const m=e.data;if(m.to===id&&ls.d)ls.d(m.d)};const conn={id,send:d=>bc.postMessage({from:id,type:'data',d}),onData:f=>ls.d=f,onClose:f=>ls.c=f,close:()=>{}};
   bc.postMessage({from:id,type:'hello'});setTimeout(()=>h.onOpen(conn),80)}
-async function netHost(code,h){if(USE_BC)return bcHost(code,h);await loadPeer();const peer=new Peer('virusgame-'+code,{debug:0});NET.peer=peer;
-  peer.on('open',h.onOpen);peer.on('connection',c=>c.on('open',()=>h.onConn(wrapPeer(c))));peer.on('error',e=>h.onError(e.type||'err'))}
-async function netJoin(code,h){if(USE_BC)return bcJoin(code,h);await loadPeer();const peer=new Peer({debug:0});NET.peer=peer;
-  peer.on('open',()=>{const c=peer.connect('virusgame-'+code,{reliable:true});c.on('open',()=>h.onOpen(wrapPeer(c)))});peer.on('error',e=>h.onError(e.type||'err'))}
+// MQTT relay over secure WebSocket: works on any network (4G, NAT), no peer-to-peer needed
+const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+function loadMqtt(){return new Promise((res,rej)=>{if(window.mqtt)return res();const urls=['https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'];
+  const tryN=i=>{if(i>=urls.length)return rej('load');const s=document.createElement('script');s.src=urls[i];s.onload=()=>window.mqtt?res():tryN(i+1);s.onerror=()=>tryN(i+1);document.head.appendChild(s)};tryN(0)})}
+const TOP=c=>'virus-sa/v2/'+c;
+function mqConnect(will){return new Promise((res,rej)=>{let i=0;const tryB=()=>{if(i>=BROKERS.length)return rej('network');const url=BROKERS[i++];
+  const cl=mqtt.connect(url,{clientId:'vg'+Math.random().toString(36).slice(2,10),clean:true,connectTimeout:7000,reconnectPeriod:2000,keepalive:20,will});
+  let done=false;const t=setTimeout(()=>{if(!done){done=true;cl.end(true);tryB()}},8000);
+  cl.once('connect',()=>{if(done)return;done=true;clearTimeout(t);res(cl)});cl.on('error',()=>{})};tryB()})}
+const J=d=>{try{return JSON.parse(d.toString())}catch(e){return null}};
+async function netHost(code,h){if(USE_BC)return bcHost(code,h);await loadMqtt();const T=TOP(code);
+  let cl;try{cl=await mqConnect({topic:T+'/room',payload:'',retain:true,qos:1})}catch(e){return h.onError('network')}
+  const map={};let beat;
+  NET.peer={destroy:()=>{clearInterval(beat);Object.keys(map).forEach(id=>cl.publish(T+'/g/'+id,JSON.stringify({t:'__bye'})));cl.publish(T+'/room','',{retain:true,qos:1},()=>cl.end());}};
+  const room=()=>cl.publish(T+'/room',JSON.stringify({ts:Date.now()}),{retain:true,qos:1});
+  cl.subscribe(T+'/h',{qos:1},()=>{room();beat=setInterval(()=>{room();const now=Date.now();Object.entries(map).forEach(([id,m])=>{if(!m.gone&&now-m.seen>16000){m.gone=true;m.ls.c&&m.ls.c()}})},5000);h.onOpen()});
+  cl.on('message',(top,raw)=>{if(top!==T+'/h')return;const m=J(raw);if(!m||!m.f)return;let s=map[m.f];
+    if(!s){if(m.t!=='hi')return;const ls={d:null,c:null};const conn={id:m.f,send:d=>cl.publish(T+'/g/'+m.f,JSON.stringify({t:'d',d}),{qos:1}),onData:f=>ls.d=f,onClose:f=>ls.c=f,close:()=>{cl.publish(T+'/g/'+m.f,JSON.stringify({t:'__bye'}))}};
+      s=map[m.f]={conn,ls,seen:Date.now()};h.onConn(conn);cl.publish(T+'/g/'+m.f,JSON.stringify({t:'ok'}),{qos:1});return}
+    s.seen=Date.now();if(s.gone)return;if(m.t==='d'&&s.ls.d)s.ls.d(m.d);else if(m.t==='bye'){s.gone=true;s.ls.c&&s.ls.c()}})}
+async function netJoin(code,h){if(USE_BC)return bcJoin(code,h);await loadMqtt();const T=TOP(code),id='g'+Math.random().toString(36).slice(2,9);
+  let cl;try{cl=await mqConnect({topic:T+'/h',payload:JSON.stringify({f:id,t:'bye'}),qos:1})}catch(e){return h.onError('network')}
+  const ls={d:null,c:null};let opened=false,closed=false,last=Date.now(),beat,hostTs=0;
+  const conn={id,send:d=>cl.publish(T+'/h',JSON.stringify({f:id,t:'d',d}),{qos:1}),onData:f=>ls.d=f,onClose:f=>ls.c=f,close:()=>{}};
+  const lose=()=>{if(closed)return;closed=true;clearInterval(beat);ls.c&&ls.c()};
+  NET.peer={destroy:()=>{clearInterval(beat);closed=true;cl.publish(T+'/h',JSON.stringify({f:id,t:'bye'}),{qos:1},()=>cl.end())}};
+  const fail=setTimeout(()=>{if(!opened){NET.peer.destroy();h.onError(hostTs?'timeout':'peer-unavailable')}},9000);
+  cl.on('message',(top,raw)=>{if(top===T+'/room'){const m=J(raw);if(m&&m.ts){hostTs=m.ts;last=Date.now()}else if(opened)lose();return}
+    if(top!==T+'/g/'+id)return;const m=J(raw);if(!m)return;last=Date.now();
+    if(m.t==='ok'&&!opened){opened=true;clearTimeout(fail);beat=setInterval(()=>{cl.publish(T+'/h',JSON.stringify({f:id,t:'p'}));if(Date.now()-last>16000)lose()},5000);h.onOpen(conn)}
+    else if(m.t==='d'&&ls.d)ls.d(m.d);else if(m.t==='__bye')lose()});
+  cl.subscribe([T+'/g/'+id,T+'/room'],{qos:1},()=>{cl.publish(T+'/h',JSON.stringify({f:id,t:'hi'}),{qos:1})})}
 function netClose(){try{NET.conns.forEach(c=>c&&c.close())}catch(e){}try{NET.peer&&NET.peer.destroy()}catch(e){}NET.peer=null;NET.conns=[];NET.hostConn=null}
 const mkCode=()=>Array.from({length:5},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*31)]).join('');
 
@@ -1708,7 +1736,7 @@ $('#jGo').onclick=async()=>{if(inFrame&&!USE_BC){netNote();return}const code=$('
   SFX.init();setSnd(true);msg.className='nmsg';msg.textContent='ندخل الغرفة…';NET.code=code;
   try{await netJoin(code,{onOpen:conn=>{NET.hostConn=conn;conn.onData(guestData);conn.onClose(()=>{if(MODE==='guest'||!$('#joinWait').hidden){$('#gnetMsg').textContent='صاحب الغرفة طلع أو انقطع النت.';$('#gnet').hidden=false}});
       conn.send({t:'hello',name:nm,g:jG});msg.textContent='';$('#joinForm').hidden=true;$('#joinWait').hidden=false;$('#jCodeShow').textContent=code},
-    onError:t=>{msg.className='nmsg err';msg.textContent=t==='peer-unavailable'?'ما لقينا غرفة بهذا الكود. تأكد منه.':(t==='network'||t==='server-error'?'ما قدرنا نوصل لخادم الغرف. تأكد من النت.':'صار خطأ في الاتصال ('+t+').')}})}
+    onError:t=>{msg.className='nmsg err';msg.textContent=t==='peer-unavailable'?'ما لقينا غرفة بهذا الكود. تأكد منه، وتأكد إن صاحب الغرفة لسا فاتحها.':t==='timeout'?'لقينا الغرفة بس ما رد علينا. جرّب مرة ثانية.':(t==='network'||t==='server-error'?'ما قدرنا نوصل لخادم الغرف. تأكد من النت.':'صار خطأ في الاتصال ('+t+').')}})}
   catch(e){msg.className='nmsg err';msg.textContent='ما قدرنا نحمّل أداة الاتصال. تأكد من النت.'}};
 function guestData(d){if(!d||typeof d!=='object')return;
   if(d.t==='lobby'){const box=$('#jSeats');box.innerHTML='';d.seats.forEach((s,i)=>{const r=mk('div','lob-i',null,box);mk('span','gs-n',ar(i+1),r);mk('b',null,s.name,r);mk('span','lob-t',i===0?'صاحب الغرفة':s.ai?'كمبيوتر':'',r)})}
