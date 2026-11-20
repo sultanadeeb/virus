@@ -424,6 +424,50 @@ button{font-family:inherit}
 .gstatus.mine-t .tmr{background:rgba(255,255,255,.25)}
 .tmr.low{background:#E0284B!important;color:#fff;animation:tgp 1s infinite}
 .gtable.noinfo .ginfo-box{display:none}
+
+/* ===== richer color pass (Sunset + Sunflower + charcoal) ===== */
+body:not(.dark){background:linear-gradient(160deg,#FFE9C2 0%,#FFE3B3 35%,#FFD49A 70%,#FBB931 100%) fixed}
+body:not(.dark)::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(circle at 8% 12%,rgba(255,209,0,.35),transparent 32%),radial-gradient(circle at 92% 85%,rgba(234,97,19,.28),transparent 38%),radial-gradient(circle at 85% 10%,rgba(248,143,34,.22),transparent 30%)}
+body:not(.dark) #hdr{background:#202020;border-bottom:3px solid #EA6113}
+body:not(.dark) #hdr .logo{color:#FFE3B3}
+body:not(.dark) #hdr .hb{color:#FFE3B3;border-color:rgba(255,227,179,.3)}
+body:not(.dark) #hdr .hb:hover{background:rgba(255,255,255,.08)}
+body:not(.dark) #hdr .hb.pl{background:#FFD100;color:#202020;border-color:#FFD100}
+body:not(.dark) #hdr .hb.on{background:#EA6113;color:#fff;border-color:#EA6113}
+body:not(.dark) #bar{background:linear-gradient(270deg,#EA6113,#FFD100)}
+body:not(.dark) .btn.s{background:#FFD100;border-color:#FFD100;color:#202020}
+body:not(.dark) .btn.s:hover{background:#FFE14d}
+body:not(.dark) .btn.p2{background:#202020;color:#FFD100}
+body:not(.dark) #home .eb,body:not(.dark) .sh .k{color:#EA6113}
+body:not(.dark) #home h1{text-shadow:0 8px 0 #FFD100}
+body:not(.dark) #panel{background:#202020;color:#FFF4E2;border:0;box-shadow:0 20px 50px rgba(32,32,32,.3)}
+body:not(.dark) #panel #pt{color:#FFF4E2}body:not(.dark) #pk{color:#FFD100}
+body:not(.dark) #pdots i{background:rgba(255,255,255,.18)}body:not(.dark) #pdots i.done{background:#FFD100}
+body:not(.dark) #prev{color:#FFF4E2;border-color:rgba(255,255,255,.3)}body:not(.dark) #replay{color:#d8c7b0}
+body:not(.dark) .chip{background:rgba(255,255,255,.75)}
+body:not(.dark) .chip.done{background:#FFD100;color:#202020;border-color:#FFD100}
+body:not(.dark) .chip.cur{background:#EA6113;color:#fff;border-color:#EA6113}
+body:not(.dark) .tabs button.on,body:not(.dark) .gs-tabs button.on{background:#202020;color:#FFD100}
+body:not(.dark) .gs-box,body:not(.dark) .nform,body:not(.dark) .qi,body:not(.dark) .ginfo-box{background:#fff;border-top:5px solid #EA6113}
+body:not(.dark) .qi:nth-child(even){border-top-color:#FFD100}
+body:not(.dark) .glegend{background:#fff;border-top:5px solid #FFD100}
+body:not(.dark) .glog-box,body:not(.dark) .gscore{background:#fff;border-top:5px solid #202020}
+body:not(.dark) .gboard{background:radial-gradient(ellipse at 50% 42%,#FFF6E6 0%,#FFE3B3 55%,#F8B865 100%);border:3px solid #EA6113;box-shadow:inset 0 0 0 8px rgba(255,209,0,.25),0 24px 60px rgba(150,70,10,.2)}
+body:not(.dark) .gboard::before{border-color:rgba(32,32,32,.12)}
+body:not(.dark) .gboard::after{color:rgba(234,97,19,.09)}
+body:not(.dark) .pp{background:#fff;border-color:rgba(32,32,32,.08)}
+body:not(.dark) .pp.turn{border-color:#EA6113;box-shadow:0 0 0 4px rgba(255,209,0,.55)}
+body:not(.dark) .gstatus{background:#202020;color:#FFF4E2}
+body:not(.dark) .gstatus.mine-t{background:#EA6113;color:#fff}
+body:not(.dark) .room{background:#202020;border:0}body:not(.dark) .room .rc{color:#FFD100}body:not(.dark) .room .mini-b{color:#FFE3B3;border-color:rgba(255,227,179,.3)}
+body:not(.dark) .gsetbox{border-top:6px solid #EA6113}
+body:not(.dark) .seg button.on{background:#202020;color:#FFD100;box-shadow:none}
+body:not(.dark) .ch-o{background:#FFF4E2}body:not(.dark) .ch-o:hover{background:#FFD100}
+body:not(.dark) .gchoose{border:3px solid #202020}
+body:not(.dark) .gtoast{border:3px solid #EA6113}
+body:not(.dark) .tagpro{background:#2F6FE0}
+
 /* dark mode */
 body.dark{--ink:#F4EDE2;--muted:#BFAE98;--line:rgba(255,255,255,.1);--felt1:#3a3533;--felt2:#2a2726;--felt3:#202020;color-scheme:dark}
 body.dark::before{background-image:radial-gradient(rgba(255,255,255,.5) 1px,transparent 1px)}
