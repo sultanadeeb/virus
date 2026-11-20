@@ -552,6 +552,22 @@ body.dark .gi-now{background:rgba(34,217,140,.12)}
 .gi-tip .uic{color:var(--tq,#0E9AA0)}
 .sc-n .uic{color:#FFB400;margin-inline-end:.3em}
 .hcount .uic{margin-inline-end:.15em}
+
+/* ===== room code (digits, brand style) ===== */
+.otp-l{display:block;font-weight:900;font-size:15px;color:var(--muted,#7a6248);margin:0 0 8px}
+.otp{position:relative;display:flex;gap:10px;justify-content:center;direction:ltr}
+.otp i{font-style:normal;width:52px;height:64px;border-radius:15px;background:#f8f4ea;box-shadow:inset 0 0 0 2.5px rgba(32,32,32,.18),0 6px 14px rgba(120,55,10,.14);display:grid;place-items:center;font:900 32px/1 Zanjabeel,system-ui,sans-serif;color:#202020;transition:box-shadow .2s,transform .2s}
+.otp i.fill{box-shadow:inset 0 0 0 2.5px #202020,0 6px 14px rgba(120,55,10,.18)}
+.otp i.cur{box-shadow:inset 0 0 0 3px #EA6113,0 0 0 5px rgba(234,97,19,.18);transform:translateY(-2px)}
+.otp i.cur:empty::after{content:"";width:3px;height:30px;border-radius:2px;background:#EA6113;animation:otpb 1s steps(1) infinite}
+@keyframes otpb{50%{opacity:0}}
+.otp input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;margin:0;cursor:text;caret-color:transparent;color:transparent;background:transparent}
+.otp.show i{width:46px;height:58px;font-size:28px;background:#fff;box-shadow:inset 0 0 0 2.5px #EA6113,0 6px 14px rgba(120,55,10,.16)}
+.otp.show i:nth-child(odd){transform:rotate(-3deg)}.otp.show i:nth-child(even){transform:rotate(2.5deg)}
+body.dark .otp i{background:#2a2726;color:#F4EDE2;box-shadow:inset 0 0 0 2.5px rgba(244,237,226,.22)}
+body.dark .otp i.fill{box-shadow:inset 0 0 0 2.5px #F4EDE2}
+body.dark .otp.show i{background:#202020;box-shadow:inset 0 0 0 2.5px #EA6113}
+@media(max-width:600px){.otp{gap:7px}.otp i{width:46px;height:58px;font-size:28px}}
 </style>
 </head>
 <body>
@@ -1536,7 +1552,7 @@ root.innerHTML=`
     <div id="hostForm"><div class="gs-seat"><input id="hName" maxlength="14" placeholder="اسمك">${GEN.replace('gs-tg gen','gs-tg gen" id="hGen')}</div>
       <div class="gs-go"><button class="btn p" id="hCreate">أنشئ الغرفة</button></div></div>
     <div id="hostLobby" hidden>
-      <div class="room"><div><div class="rk">كود الغرفة</div><div class="rc" id="hCode">-----</div></div><div class="rbtns"><button class="mini-b" id="hCopy">انسخ رابط الدعوة</button><button class="mini-b" id="hCopyCode">انسخ الكود</button></div></div>
+      <div class="room"><div><div class="rk">كود الغرفة</div><div class="otp show" id="hCode" dir="ltr" aria-live="polite"></div></div><div class="rbtns"><button class="mini-b" id="hCopy">انسخ رابط الدعوة</button><button class="mini-b" id="hCopyCode">انسخ الكود</button></div></div>
       <p class="rhint">أرسل الرابط أو الكود لربعك، وأول ما يدخلون تطلع أسماؤهم هنا.</p>
       <div id="hSeats" class="lob"></div>
       <div class="gs-go"><button class="btn p" id="hStart">ابدأ اللعب</button><button class="btn s" id="hAddAI">${UI.plus}أضف كمبيوتر</button><button class="btn s gsetbtn">${UI.gear}إعدادات اللعبة</button></div>
@@ -1544,7 +1560,7 @@ root.innerHTML=`
     <div class="nmsg" id="hMsg"></div>
   </div>
   <div class="gs-box" id="tabJoin" hidden>
-    <div id="joinForm"><div class="gs-seat"><input id="jCode" maxlength="5" placeholder="كود الغرفة" dir="ltr" style="font-family:system-ui,Arial,sans-serif;text-align:center;letter-spacing:6px;font-weight:900;text-transform:uppercase;max-width:200px"></div>
+    <div id="joinForm"><div class="gs-seat"><label class="otp-l" for="jCode">كود الغرفة</label><div class="otp" id="jOtp" dir="ltr"><input id="jCode" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="5" aria-label="كود الغرفة، ٥ أرقام"><i></i><i></i><i></i><i></i><i></i></div></div>
       <div class="gs-seat"><input id="jName" maxlength="14" placeholder="اسمك">${GEN.replace('gs-tg gen','gs-tg gen" id="jGen')}</div>
       <div class="gs-go"><button class="btn p" id="jGo">ادخل</button></div></div>
     <div id="joinWait" hidden><div class="rk">دخلت الغرفة <b id="jCodeShow"></b></div><p class="rhint">ننتظر صاحب الغرفة يبدأ اللعب…</p><div id="jSeats" class="lob"></div></div>
@@ -1697,13 +1713,17 @@ async function netJoin(code,h){if(USE_BC)return bcJoin(code,h);await loadMqtt();
     else if(m.t==='d'&&ls.d)ls.d(m.d);else if(m.t==='__bye')lose()});
   cl.subscribe([T+'/g/'+id,T+'/room'],{qos:1},()=>{cl.publish(T+'/h',JSON.stringify({f:id,t:'hi'}),{qos:1})})}
 function netClose(){try{NET.conns.forEach(c=>c&&c.close())}catch(e){}try{NET.peer&&NET.peer.destroy()}catch(e){}NET.peer=null;NET.conns=[];NET.hostConn=null}
-const mkCode=()=>Array.from({length:5},()=>'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*31)]).join('');
+const mkCode=()=>String(Math.floor(10000+Math.random()*90000));
+const normCode=s=>String(s||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/\D/g,'').slice(0,5);
+const arD=s=>String(s).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+function drawCode(el,code){el.innerHTML='';[...code].forEach(d=>{const i=document.createElement('i');i.textContent=arD(d);el.appendChild(i)})}
+function syncOtp(){const inp=$('#jCode'),v=normCode(inp.value);if(inp.value!==v)inp.value=v;const bx=$('#jOtp').querySelectorAll('i');bx.forEach((b,k)=>{b.textContent=v[k]?arD(v[k]):'';b.classList.toggle('cur',document.activeElement===inp&&k===Math.min(v.length,4));b.classList.toggle('fill',!!v[k])})}
 
 // ---------- host lobby ----------
 $('#hCreate').onclick=async()=>{if(inFrame&&!USE_BC){netNote();return}const nm=$('#hName').value.trim();if(!nm){flash($('#hCreate'),'اكتب اسمك أول');return}
   SFX.init();setSnd(true);const msg=$('#hMsg');msg.className='nmsg';msg.textContent='ننشئ الغرفة…';
   const code=mkCode();NET.code=code;NET.lobby=[{name:nm,g:hG,ai:false,me:true}];
-  try{await netHost(code,{onOpen:()=>{msg.textContent='';$('#hostForm').hidden=true;$('#hostLobby').hidden=false;$('#hCode').textContent=code;drawLobby()},
+  try{await netHost(code,{onOpen:()=>{msg.textContent='';$('#hostForm').hidden=true;$('#hostLobby').hidden=false;drawCode($('#hCode'),code);drawLobby()},
     onConn:conn=>{conn.onData(d=>hostData(conn,d));conn.onClose(()=>hostLost(conn))},
     onError:t=>{msg.className='nmsg err';msg.textContent=t==='unavailable-id'?'الكود مستخدم، جرّب مرة ثانية.':(t==='network'||t==='server-error'?'ما قدرنا نوصل لخادم الغرف. تأكد من النت.':'صار خطأ في الاتصال ('+t+').')}})}
   catch(e){msg.className='nmsg err';msg.textContent='ما قدرنا نحمّل أداة الاتصال. تأكد من النت.'}};
@@ -1731,11 +1751,12 @@ function hostLost(conn){const li=NET.lobby.findIndex(s=>s.conn===conn);
   if(G.turn===seat&&!acted&&G.winner==null)T(aiAct,900)}
 
 // ---------- guest ----------
-$('#jGo').onclick=async()=>{if(inFrame&&!USE_BC){netNote();return}const code=$('#jCode').value.trim().toUpperCase(),nm=$('#jName').value.trim();
+['input','focus','blur','keyup','click'].forEach(e=>$('#jCode').addEventListener(e,()=>{syncOtp();if(e==='input'&&$('#jCode').value.length===5&&!$('#jName').value.trim())$('#jName').focus()}));
+$('#jGo').onclick=async()=>{if(inFrame&&!USE_BC){netNote();return}const code=normCode($('#jCode').value),nm=$('#jName').value.trim();
   const msg=$('#jMsg');if(code.length!==5){msg.className='nmsg err';msg.textContent='الكود لازم يكون ٥ خانات.';return}if(!nm){msg.className='nmsg err';msg.textContent='اكتب اسمك.';return}
   SFX.init();setSnd(true);msg.className='nmsg';msg.textContent='ندخل الغرفة…';NET.code=code;
   try{await netJoin(code,{onOpen:conn=>{NET.hostConn=conn;conn.onData(guestData);conn.onClose(()=>{if(MODE==='guest'||!$('#joinWait').hidden){$('#gnetMsg').textContent='صاحب الغرفة طلع أو انقطع النت.';$('#gnet').hidden=false}});
-      conn.send({t:'hello',name:nm,g:jG});msg.textContent='';$('#joinForm').hidden=true;$('#joinWait').hidden=false;$('#jCodeShow').textContent=code},
+      conn.send({t:'hello',name:nm,g:jG});msg.textContent='';$('#joinForm').hidden=true;$('#joinWait').hidden=false;$('#jCodeShow').textContent=arD(code)},
     onError:t=>{msg.className='nmsg err';msg.textContent=t==='peer-unavailable'?'ما لقينا غرفة بهذا الكود. تأكد منه، وتأكد إن صاحب الغرفة لسا فاتحها.':t==='timeout'?'لقينا الغرفة بس ما رد علينا. جرّب مرة ثانية.':(t==='network'||t==='server-error'?'ما قدرنا نوصل لخادم الغرف. تأكد من النت.':'صار خطأ في الاتصال ('+t+').')}})}
   catch(e){msg.className='nmsg err';msg.textContent='ما قدرنا نحمّل أداة الاتصال. تأكد من النت.'}};
 function guestData(d){if(!d||typeof d!=='object')return;
@@ -1752,7 +1773,7 @@ function syncNet(){if(MODE!=='host')return;NET.conns.forEach((c,i)=>{if(c)c.send
 function fxNet(res){if(MODE!=='host')return;NET.conns.forEach(c=>{if(c)c.send({t:'fx',ev:res.ev,card:res.card||null,fx:res.fx})})}
 
 // ---------- game flow (local + host) ----------
-function showTable(){$('#gsetup').hidden=true;$('#gtable').hidden=false;$('#gwin').hidden=true;$('#gRoom').hidden=MODE==='local';if(MODE!=='local')$('#gRoom').textContent='الغرفة '+NET.code;$('#gRestart').hidden=MODE==='guest'}
+function showTable(){$('#gsetup').hidden=true;$('#gtable').hidden=false;$('#gwin').hidden=true;$('#gRoom').hidden=MODE==='local';if(MODE!=='local')$('#gRoom').textContent='الغرفة '+arD(NET.code);$('#gRestart').hidden=MODE==='guest'}
 function startGame(list){clearT();TOK++;nextLock=-1;busy=false;acted=false;G=VG.newGame(list,{handSize:SET.hand,winN:SET.win});
   if(MODE==='local'){viewer=G.players.findIndex(p=>!p.ai)}else viewer=mySeat;
   showTable();resetUI();sync();SFX.play('swish');
@@ -1905,7 +1926,7 @@ addEventListener('resize',()=>{if(G&&screen==='play')render(!$('#gcover').hidden
 let tt=null;function toast(k,msg){const t=$('#gtoast');t.innerHTML='';if(k)t.appendChild(cw(k,innerWidth<900?.3:.4));mk('div','tm',msg,t);t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1600*SPD())}
 // invite link → open join tab
 const rp=new URLSearchParams(location.search).get('room');
-if(rp){setTimeout(()=>{go('play');$('#gsTabs').querySelector('[data-tab="join"]').click();$('#jCode').value=rp.toUpperCase().slice(0,5)},400)}
+if(rp){setTimeout(()=>{go('play');$('#gsTabs').querySelector('[data-tab="join"]').click();$('#jCode').value=normCode(rp);syncOtp()},400)}
 applySet();drawScore();
 window.VGUI={render:()=>{if(G)render()},applySet};
 })();
