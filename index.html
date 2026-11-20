@@ -468,6 +468,30 @@ body:not(.dark) .gchoose{border:3px solid #202020}
 body:not(.dark) .gtoast{border:3px solid #EA6113}
 body:not(.dark) .tagpro{background:#2F6FE0}
 
+
+/* ===== turquoise accent ===== */
+:root{--tq:#0E9AA0;--tq2:#12B5B0}
+body:not(.dark)::after{background:radial-gradient(circle at 8% 12%,rgba(255,209,0,.35),transparent 32%),radial-gradient(circle at 92% 85%,rgba(234,97,19,.28),transparent 38%),radial-gradient(circle at 88% 8%,rgba(14,154,160,.16),transparent 28%)}
+#bar,body:not(.dark) #bar{background:linear-gradient(270deg,#EA6113,#FFD100 55%,#0E9AA0)}
+body:not(.dark) .ginfo-box{border-top-color:var(--tq)}
+body:not(.dark) .gi-k{color:var(--tq)}
+.gi-now{background:rgba(14,154,160,.1)!important;border-right-color:var(--tq)!important}.gi-now b{color:var(--tq)!important}
+.gi-now.no{background:rgba(224,40,75,.08)!important;border-right-color:#E0284B!important}.gi-now.no b{color:#E0284B!important}
+body:not(.dark) .pp.turn{border-color:var(--tq);box-shadow:0 0 0 4px rgba(14,154,160,.28)}
+.slot2.tg::after,body:not(.dark) .slot2.tg::after{border-color:var(--tq)!important}
+@keyframes tgp2{50%{border-color:#EA6113;transform:scale(1.03)}}
+.pp.tg{border-color:var(--tq)!important}
+@keyframes tgp{50%{box-shadow:0 0 0 6px rgba(14,154,160,.35)}}
+body:not(.dark) #home .btn.s[data-go="faq"]{background:var(--tq);border-color:var(--tq);color:#fff}
+body:not(.dark) .glog-box{border-top-color:var(--tq)}
+body:not(.dark) .glog-box h4{color:var(--tq)}
+body:not(.dark) .ch-o:hover{background:#D7F3F2;border-color:var(--tq)}
+body:not(.dark) .chip.done{background:var(--tq);color:#fff;border-color:var(--tq)}
+body:not(.dark) #pdots i.done{background:var(--tq2)}
+.tbot{background:rgba(14,154,160,.12)!important;color:var(--tq)!important}
+.hdots i.on{background:var(--tq)}
+body:not(.dark) .gwt{border-top:4px solid var(--tq)}
+
 /* dark mode */
 body.dark{--ink:#F4EDE2;--muted:#BFAE98;--line:rgba(255,255,255,.1);--felt1:#3a3533;--felt2:#2a2726;--felt3:#202020;color-scheme:dark}
 body.dark::before{background-image:radial-gradient(rgba(255,255,255,.5) 1px,transparent 1px)}
